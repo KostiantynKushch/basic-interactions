@@ -1,10 +1,12 @@
 {
   "name": "basic-interactions",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Simple lib to add basic interactivity for your common front-end project",
-  "main": "dist/basic-interactions.esm.js",
+  "main": "dist/basic-interactions.min.js",
+  "module": "dist/basic-interactions.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "rollup -c",
+    "dev": "rollup -c -w"
   },
   "repository": {
     "type": "git",
@@ -22,5 +24,9 @@
   "bugs": {
     "url": "https://github.com/KostiantynKushch/basic-interactions/issues"
   },
-  "homepage": "https://github.com/KostiantynKushch/basic-interactions#readme"
+  "homepage": "https://github.com/KostiantynKushch/basic-interactions#readme",
+  "devDependencies": {
+    "@rollup/plugin-terser": "^0.4.4",
+    "rollup": "^4.9.5"
+  }
 }
