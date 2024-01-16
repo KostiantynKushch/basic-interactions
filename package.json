@@ -1,0 +1,26 @@
+{
+  "name": "basic-interactions",
+  "version": "1.0.0",
+  "description": "Simple lib to add basic interactivity for your common front-end project",
+  "main": "dist/basic-interactions.esm.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KostiantynKushch/basic-interactions.git"
+  },
+  "keywords": [
+    "interactions",
+    "events",
+    "click",
+    "toggle",
+    "resize"
+  ],
+  "author": "kos_kushch",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KostiantynKushch/basic-interactions/issues"
+  },
+  "homepage": "https://github.com/KostiantynKushch/basic-interactions#readme"
+}
