@@ -1,24 +1,27 @@
 class BasicInteractions {
   constructor({
-    globalNameSpace = "BasicInteractions",
-    toggleSelector = "data-toggle",
-    targetToggleSelector = "data-toggle-target",
-    classToggleAction = "data-toggle-action",
-    resetSelector = "data-reset",
-    resetsGroupSelector = "data-group-reset",
-    scrollSelector = "data-scroll",
-    scrollClasses = ["overflow-hidden", "fixed", "left-0", "right-0"],
-    attachAttributeSelector = "data-attach",
-    attachAttributeValueSelector = "data-attach-value",
-    detachAttributeSelector = "data-detach",
+    globalNameSpace = 'BasicInteractions',
+    toggleSelector = 'data-toggle',
+    toggleSelfSelector = 'data-toggle-self',
+    targetToggleSelector = 'data-toggle-target',
+    classToggleAction = 'data-toggle-action',
+    resetSelector = 'data-reset',
+    resetsGroupSelector = 'data-group-reset',
+    scrollSelector = 'data-scroll',
+    scrollClasses = ['overflow-hidden', 'fixed', 'left-0', 'right-0'],
+    attachAttributeSelector = 'data-attach',
+    attachAttributeValueSelector = 'data-attach-value',
+    detachAttributeSelector = 'data-detach',
   } = {}) {
     // debounce timeoutId
     this.timeoutId = null;
     // local state of active targets that should be reset on specific event
     window[globalNameSpace] = { resets: [] };
     this.resets = window[globalNameSpace].resets;
-    // required main selector
+    // required main toggle selector
     this.toggleSelector = toggleSelector;
+    // required optional self toggle selector
+    this.toggleSelfSelector = toggleSelfSelector;
     // target selector where classes can be applied
     this.targetToggleSelector = targetToggleSelector;
     // attribute to indicate specific toggle action
@@ -55,13 +58,13 @@ class BasicInteractions {
 
   enableScroll() {
     document.body.classList.remove(...this.scrollClasses);
-    document.body.style.removeProperty("top");
+    document.body.style.removeProperty('top');
     window.scrollTo(0, this.scrollPosition);
     this.isActiveScroll = false;
   }
 
   toggleScroll(switcher) {
-    if (typeof switcher === "boolean") {
+    if (typeof switcher === 'boolean') {
       switcher
         ? !this.isActiveScroll && this.disableScroll()
         : this.isActiveScroll && this.enableScroll();
@@ -75,23 +78,27 @@ class BasicInteractions {
       const toArray = (string) =>
         string
           ?.toLowerCase()
-          .split(" ")
-          .filter((item) => item !== "");
+          .split(' ')
+          .filter((item) => item !== '');
 
       this.toggleTarget = node.getAttribute(this.targetToggleSelector);
       this.classesToToggle = toArray(node.getAttribute(this.toggleSelector));
+      this.classesToToggleSelf = this.toggleSelfSelector
+        ? toArray(node.getAttribute(this.toggleSelfSelector))
+        : null;
       this.toggleAction = node.getAttribute(this.classToggleAction);
       this.resetActions = toArray(node.getAttribute(this.resetSelector));
-      this.resetsGroup = node.closest(`[${this.resetsGroupSelector}]`);
       this.scrollAction = node.getAttribute(this.scrollSelector);
       this.attachAttribute = node.getAttribute(this.attachAttributeSelector);
       this.attachAttributeValue = node.getAttribute(
         this.attachAttributeValueSelector
       );
       this.detachAttribute = node.getAttribute(this.detachAttributeSelector);
+      this.resetsGroup = node.closest(`[${this.resetsGroupSelector}]`);
     } else {
       this.toggleTarget = null;
       this.classesToToggle = null;
+      this.classesToToggleSelf = null;
       this.toggleAction = null;
       this.resetActions = null;
       this.resetsGroup = null;
@@ -117,7 +124,7 @@ class BasicInteractions {
 
     if (
       target.hasAttribute(attributeToToggle) ||
-      (typeof isAttached === "boolean" && isAttached)
+      (typeof isAttached === 'boolean' && isAttached)
     ) {
       // detach attribute
       target.removeAttribute(attributeToToggle);
@@ -130,16 +137,16 @@ class BasicInteractions {
     }
   }
 
-  handleToggleClasses(target) {
+  handleToggleClasses(target, self) {
     let toggle;
 
     // change toggle action
     if (this.toggleAction) {
       switch (this.toggleAction.toLowerCase()) {
-        case "add":
+        case 'add':
           toggle = true;
           break;
-        case "remove":
+        case 'remove':
           toggle = false;
           break;
       }
@@ -149,19 +156,25 @@ class BasicInteractions {
     this.classesToToggle.forEach((className) => {
       target.classList.toggle(className, toggle);
     });
+
+    if (self) {
+      this.classesToToggleSelf.forEach((className) => {
+        self.classList.toggle(className, toggle);
+      });
+    }
   }
 
   handleToggleScroll() {
     // toggle scroll
     if (this.scrollAction) {
       switch (this.scrollAction) {
-        case "toggle":
+        case 'toggle':
           this.toggleScroll();
           break;
-        case "enable":
+        case 'enable':
           this.enableScroll();
           break;
-        case "disable":
+        case 'disable':
           this.disableScroll();
           break;
       }
@@ -176,6 +189,9 @@ class BasicInteractions {
     // set Attributes
     this.updateAttributes(target);
 
+    // save self node
+    const self = this.classesToToggleSelf ? target : null;
+
     // update group reset entry
     if (this.resetsGroup && this.resets?.length > 0) this.handleGroupReset();
 
@@ -185,7 +201,7 @@ class BasicInteractions {
     }
 
     // toggle classes
-    this.handleToggleClasses(target);
+    this.handleToggleClasses(target, self);
     // toggle scroll
     this.handleToggleScroll();
 
@@ -199,6 +215,8 @@ class BasicInteractions {
       if (nodeIndex === -1 && this.resetActions) {
         this.resets.push({
           node: target,
+          self,
+          selfClasses: this.classesToToggleSelf,
           resetActions: this.resetActions,
           resetsGroup: this.resetsGroup,
           classes: this.classesToToggle,
@@ -244,8 +262,12 @@ class BasicInteractions {
   entryReset(entry) {
     if (!entry) return;
     // toggle all assigned classes to the target
-    entry.classes.forEach((className) =>
+    entry.classes?.forEach((className) =>
       entry.node.classList.toggle(className)
+    );
+    // toggle all assigned class to self
+    entry.selfClasses?.forEach((className) =>
+      entry.self.classList.toggle(className)
     );
     // reset scroll
     if (entry.scroll) this.toggleScroll();
