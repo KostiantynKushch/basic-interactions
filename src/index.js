@@ -12,6 +12,7 @@ class BasicInteractions {
     attachAttributeSelector = 'data-attach',
     attachAttributeValueSelector = 'data-attach-value',
     detachAttributeSelector = 'data-detach',
+    interactOnLoad = 'data-on-load',
   } = {}) {
     // debounce timeoutId
     this.timeoutId = null;
@@ -34,6 +35,9 @@ class BasicInteractions {
     this.attachAttributeSelector = attachAttributeSelector;
     this.attachAttributeValueSelector = attachAttributeValueSelector;
     this.detachAttributeSelector = detachAttributeSelector;
+
+    // on load interaction selector
+    this.interactOnLoad = interactOnLoad;
 
     // BodyScroll
     this.scrollSelector = scrollSelector;
@@ -243,6 +247,23 @@ class BasicInteractions {
     this.updateAttributes();
   }
 
+  handleAutoInteraction() {
+    // get all items that have on-load attribute
+    const activeItems = document.querySelectorAll(`[${this.interactOnLoad}]`);
+    // go through all fined items
+    activeItems.forEach((node) => {
+      // check if delay exists
+      const delay = +node.dataset.onLoad;
+      if (delay !== NaN && delay > 0) {
+        setTimeout(() => {
+          this.handleInteraction(node);
+        }, delay);
+      } else {
+        this.handleInteraction(node);
+      }
+    });
+  }
+
   handleResets(resetAction) {
     if (!resetAction) return;
     // items to reset
@@ -284,6 +305,28 @@ class BasicInteractions {
       this.resets.findIndex((item) => item === entry),
       1
     );
+  }
+
+  init() {
+    //interact on load
+    this.handleAutoInteraction();
+
+    // add global listeners for you app
+    document.addEventListener('click', ({ target }) => {
+      this.handleInteraction(target);
+    });
+
+    window.addEventListener('resize', () => {
+      this.debounce(() => {
+        if (this.resets?.length > 0) {
+          this.handleResets('resize');
+        }
+      });
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') this.handleResets('escape');
+    });
   }
 }
 
