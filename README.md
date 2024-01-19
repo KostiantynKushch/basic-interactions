@@ -94,8 +94,8 @@ const bi = new BasicInteractions({
 | resetSelector                |       data-reset        |                                                                                           contains string of reset actions (resize escape) |
 | resetsGroupSelector          |    data-group-reset     |                                                               contains null; used to mark group of items where only one item can be active |
 | globalNameSpace              |    BasicInteractions    |                                                         optional parameter / to create global scope in window object to share resets array |
-| scrollSelector               |       data-scroll       |                                                                           to mark ('toggle', 'disable', or 'enable') body scroll behavior. |
-| scrollClasses                | 'string of css classes' | optional parameter / list of classes that should be applied to html body to disable body scroll. By default used list of Tailwind classes. |
+| scrollToggleSelector         |   data-toggle-scroll    |                                                                           to mark ('toggle', 'disable', or 'enable') body scroll behavior. |
+| scrollToggleClasses          | 'string of css classes' | optional parameter / list of classes that should be applied to html body to disable body scroll. By default used list of Tailwind classes. |
 | attachAttributeSelector      |       data-attach       |                                                                                   to attach additional custom data attribute to the target |
 | attachAttributeValueSelector |    data-attach-value    |                                                      to specify the value for the additional custom data attribute to attach to the target |
 | detachAttributeSelector      |       data-detach       |                                                                             to specify an attribute that should be removed from the target |

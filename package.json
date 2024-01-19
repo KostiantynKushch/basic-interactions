@@ -1,6 +1,6 @@
 {
   "name": "basic-interactions",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Simple lib to add basic interactivity for your common front-end project",
   "main": "dist/basic-interactions.js",
   "module": "dist/basic-interactions.js",

@@ -7,8 +7,8 @@ class BasicInteractions {
     classToggleAction = 'data-toggle-action',
     resetSelector = 'data-reset',
     resetsGroupSelector = 'data-group-reset',
-    scrollSelector = 'data-scroll',
-    scrollClasses = ['overflow-hidden', 'fixed', 'left-0', 'right-0'],
+    scrollToggleSelector = 'data-toggle-scroll',
+    scrollToggleClasses = ['overflow-hidden', 'fixed', 'left-0', 'right-0'],
     attachAttributeSelector = 'data-attach',
     attachAttributeValueSelector = 'data-attach-value',
     detachAttributeSelector = 'data-detach',
@@ -40,8 +40,8 @@ class BasicInteractions {
     this.interactOnLoad = interactOnLoad;
 
     // BodyScroll
-    this.scrollSelector = scrollSelector;
-    this.scrollClasses = scrollClasses;
+    this.scrollToggleSelector = scrollToggleSelector;
+    this.scrollToggleClasses = scrollToggleClasses;
     this.scrollPosition = 0;
     this.isActiveScroll = false;
   }
@@ -56,12 +56,12 @@ class BasicInteractions {
   disableScroll() {
     this.scrollPosition = window.scrollY;
     document.body.style.top = `-${this.scrollPosition}px`;
-    document.body.classList.add(...this.scrollClasses);
+    document.body.classList.add(...this.scrollToggleClasses);
     this.isActiveScroll = true;
   }
 
   enableScroll() {
-    document.body.classList.remove(...this.scrollClasses);
+    document.body.classList.remove(...this.scrollToggleClasses);
     document.body.style.removeProperty('top');
     window.scrollTo(0, this.scrollPosition);
     this.isActiveScroll = false;
@@ -92,7 +92,7 @@ class BasicInteractions {
         : null;
       this.toggleAction = node.getAttribute(this.classToggleAction);
       this.resetActions = toArray(node.getAttribute(this.resetSelector));
-      this.scrollAction = node.getAttribute(this.scrollSelector);
+      this.scrollAction = node.getAttribute(this.scrollToggleSelector);
       this.attachAttribute = node.getAttribute(this.attachAttributeSelector);
       this.attachAttributeValue = node.getAttribute(
         this.attachAttributeValueSelector
