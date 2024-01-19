@@ -2,7 +2,7 @@
   "name": "basic-interactions",
   "version": "0.0.1",
   "description": "Simple lib to add basic interactivity for your common front-end project",
-  "main": "dist/basic-interactions.min.js",
+  "main": "dist/basic-interactions.js",
   "module": "dist/basic-interactions.js",
   "scripts": {
     "build": "rollup -c",

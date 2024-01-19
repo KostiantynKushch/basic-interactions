@@ -6,10 +6,6 @@ export default {
     {
       file: 'dist/basic-interactions.js',
       format: 'es',
-    },
-    {
-      file: 'dist/basic-interactions.min.js',
-      format: 'es',
       plugins: [terser()],
     },
   ],
