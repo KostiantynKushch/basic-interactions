@@ -8,5 +8,5 @@ The main goal is not develop each time on the new project the common JS code and
 Install `basic-interactions` package:
 
 ```bash
-npm install --save basic-interactions
+npm install basic-interactions
 ```
