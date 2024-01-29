@@ -101,10 +101,111 @@ const bi = new BasicInteractions({
 | detachAttributeSelector      |       data-detach       |                                                                             to specify an attribute that should be removed from the target |
 | interactOnLoad               |      data-on-load       |                                                                                 to indicate targets that should be interacted on page load |
 
-### Add data attributes to HTML markup
+### Common usage
 
-<!-- TODO: add examples -->
+Toggle classes on click:
+
+```html
+<button data-toggle="some classes goes here"></button>
+```
+
+Toggle classes on click and load:
+
+```html
+<button data-toggle="some classes goes here" data-on-load></button>
+```
+
+Toggle classes with reset options (escape and resize):
+
+```html
+<button data-toggle="some classes goes here" data-rest="escape resize"></button>
+```
+
+Toggle classes for specific target:
+
+```html
+<button data-toggle="some classes goes here" data-target="#target-id"></button>
+```
+
+Add or Remove classes for specific target:
+
+```html
+<button
+  data-toggle="some classes goes here"
+  data-toggle-action="add"
+  data-target="#target-id"
+></button>
+<button
+  data-toggle="some classes goes here"
+  data-toggle-action="remove"
+  data-target="#another-target-id"
+></button>
+```
+
+Toggle classes for specific target and event target:
+
+```html
+<button
+  data-toggle="some classes goes here"
+  data-toggle-self="other classes"
+  data-target="#target-id"
+></button>
+```
+
+Toggle classes and body scroll:
+
+```html
+<button
+  data-toggle="some classes goes here"
+  data-toggle-scroll="toggle"
+  data-rest="escape resize"
+></button>
+```
+
+Toggle classes for group of element where only one element should be active (with toggled classes):
+
+```html
+<div data-group-reset>
+  <button data-toggle="some classes goes here"></button>
+  <button data-toggle="some classes goes here"></button>
+  <button data-toggle="some classes goes here"></button>
+</div>
+```
+
+### Add/Remove data attributes to HTML markup
+
+```html
+<button data-attach="data-attribute" data-attach-value="value"></button>
+<button data-detach="data-attribute"></button>
+```
 
 ### Advanced Usage / adding extra functionality
+Below is an example on how to track DOM mutations
+for adding additional functionality.
 
-<!-- TODO: add example with mutation observer -->
+Example based on adding and removing custom data attribute: 'data-src'.
+
+```js
+window.addEventListener('load', () => {
+  const observer = new MutationObserver((mutationList) => {
+    mutationList.forEach((mutation) => {
+      if (mutation.attributeName === 'data-src') {
+        if (mutation.target.hasAttribute('data-src')) {
+          // mutation on add atr
+          // your code goes here...
+          
+        } else {
+          // mutation on remove atr
+          // your code goes here...
+        }
+      }
+    });
+  });
+  observer.observe(document.querySelector('#modal'), {
+    attributes: true,
+    attributeFilter: ['data-src'],
+  });
+});
+```
+
+More info about usage of Mutation Observer you can find on [MDN](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver).
