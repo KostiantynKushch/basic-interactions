@@ -88,7 +88,7 @@ const bi = new BasicInteractions({
 | Option Name                  | Value / Attribute Name  |                                                                                                                                Description |
 | ---------------------------- | :---------------------: | -----------------------------------------------------------------------------------------------------------------------------------------: |
 | toggleSelector               |       data-toggle       |                                                                                      main attribute / contains string of classes to toggle |
-| targetToggleSelector         |   data-toggle-target    |                                                              contains target selector (#id) where toggling functionality should be applied |
+| targetToggleSelector         |   data-toggle-target    |                                                                                       contains target selector - works as querySelectorAll |
 | toggleSelfSelector           |    data-toggle-self     |           contains string of classes / useful in case that you need toggle classes in both places at once (event target and toggle target) |
 | classToggleAction            |   data-toggle-action    |                                                    contains string of toggle action ('add' / 'remove'). By default works as regular toggle |
 | resetSelector                |       data-reset        |                                                                                           contains string of reset actions (resize escape) |
@@ -121,13 +121,13 @@ Toggle classes with reset options (escape and resize):
 <button data-toggle="some classes goes here" data-rest="escape resize"></button>
 ```
 
-Toggle classes for specific target:
+Toggle classes for all specific targets:
 
 ```html
-<button data-toggle="some classes goes here" data-target="#target-id"></button>
+<button data-toggle="some classes goes here" data-target=".target"></button>
 ```
 
-Add or Remove classes for specific target:
+Add or Remove classes for specific target or targets:
 
 ```html
 <button
@@ -138,7 +138,7 @@ Add or Remove classes for specific target:
 <button
   data-toggle="some classes goes here"
   data-toggle-action="remove"
-  data-target="#another-target-id"
+  data-target=".another-targets"
 ></button>
 ```
 
@@ -180,6 +180,7 @@ Toggle classes for group of element where only one element should be active (wit
 ```
 
 ### Advanced Usage / adding extra functionality
+
 Below is an example on how to track DOM mutations
 for adding additional functionality.
 
@@ -193,7 +194,6 @@ window.addEventListener('load', () => {
         if (mutation.target.hasAttribute('data-src')) {
           // mutation on add atr
           // your code goes here...
-          
         } else {
           // mutation on remove atr
           // your code goes here...
