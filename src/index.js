@@ -8,7 +8,7 @@ class BasicInteractions {
     resetSelector = 'data-reset',
     resetsGroupSelector = 'data-group-reset',
     scrollToggleSelector = 'data-toggle-scroll',
-    scrollToggleClasses = ['overflow-hidden', 'fixed', 'left-0', 'right-0'],
+    scrollToggleClasses = 'toggle-scroll',
     attachAttributeSelector = 'data-attach',
     attachAttributeValueSelector = 'data-attach-value',
     detachAttributeSelector = 'data-detach',
@@ -93,7 +93,9 @@ class BasicInteractions {
         : null;
       this.toggleAction = node.getAttribute(this.classToggleAction);
       this.resetActions = toArray(node.getAttribute(this.resetSelector));
-      this.scrollAction = node.getAttribute(this.scrollToggleSelector);
+      this.scrollAction = !node.hasAttribute(this.scrollToggleSelector)
+        ? null
+        : node.getAttribute(this.scrollToggleSelector);
       this.attachAttribute = node.getAttribute(this.attachAttributeSelector);
       this.attachAttributeValue = node.getAttribute(
         this.attachAttributeValueSelector
@@ -142,25 +144,21 @@ class BasicInteractions {
     }
   }
 
-  isToggled(elem) {
-    if (
-      this.toggleAction === 'add' &&
-      elem.classList.contains(this.classesToToggle[0])
-    )
-      return true;
-    else if (
-      this.toggleAction === 'remove' &&
-      !elem.classList.contains(this.classesToToggle[0])
-    )
-      return true;
-    else return false;
-  }
-
   toggleSingleNodeElement(elem, classes, toggle) {
-    if (!elem || !classes || this.isToggled(elem)) return;
+    if (!elem || !classes) return;
     classes.forEach((className) => {
       elem.classList.toggle(className, toggle);
     });
+  }
+
+  togglePotentialArrayOfNodes(target, classes, toggle) {
+    if (target.length !== undefined) {
+      target.forEach((node) => {
+        this.toggleSingleNodeElement(node, classes, toggle);
+      });
+    } else {
+      this.toggleSingleNodeElement(target, classes, toggle);
+    }
   }
 
   handleToggleClasses(target, self) {
@@ -182,13 +180,7 @@ class BasicInteractions {
     }
 
     // toggle classes
-    if (target.length !== undefined) {
-      target.forEach((node) => {
-        this.toggleSingleNodeElement(node, this.classesToToggle, toggle);
-      });
-    } else {
-      this.toggleSingleNodeElement(target, this.classesToToggle, toggle);
-    }
+    this.togglePotentialArrayOfNodes(target, this.classesToToggle, toggle);
 
     if (self) {
       this.toggleSingleNodeElement(self, this.classesToToggleSelf, toggle);
@@ -197,19 +189,33 @@ class BasicInteractions {
 
   handleToggleScroll() {
     // toggle scroll
-    if (this.scrollAction) {
+    if (this.scrollAction !== null) {
       switch (this.scrollAction) {
-        case 'toggle':
-          this.toggleScroll();
-          break;
         case 'enable':
           this.enableScroll();
           break;
         case 'disable':
           this.disableScroll();
           break;
+        default:
+          this.toggleScroll();
+          break;
       }
     }
+  }
+
+  elementInteractionScenario(node, self) {
+    // update group reset entry
+    if (this.resetsGroup && this.resets?.length > 0) this.handleGroupReset();
+    // toggle classes
+    this.handleToggleClasses(node, self);
+    // toggle scroll
+    this.handleToggleScroll();
+
+    // toggle attribute
+    this.handleToggleAttribute(node);
+    // toggle resets
+    this.updateReset(node, self);
   }
 
   handleInteraction(node) {
@@ -223,32 +229,51 @@ class BasicInteractions {
     // save self node
     const self = this.classesToToggleSelf ? target : null;
 
-    // update group reset entry
-    if (this.resetsGroup && this.resets?.length > 0) this.handleGroupReset();
-
     // change toggle target
     if (this.toggleTarget) {
       target = document.querySelectorAll(this.toggleTarget);
+
+      // main scenario for single node element
+      this.elementInteractionScenario(
+        [...target].filter((element) => {
+          if (!this.toggleAction && self) {
+            if (
+              self.classList.contains(this.classesToToggleSelf[0]) &&
+              element.classList.contains(this.classesToToggle[0])
+            ) {
+              return element;
+            }
+            if (
+              !self.classList.contains(this.classesToToggleSelf[0]) &&
+              !element.classList.contains(this.classesToToggle[0])
+            ) {
+              return element;
+            }
+          } else if (
+            !(
+              this.toggleAction === 'add' &&
+              element.classList.contains(this.classesToToggle[0])
+            )
+          )
+            return element;
+          else if (
+            !(
+              this.toggleAction === 'remove' &&
+              !element.classList.contains(this.classesToToggle[0])
+            )
+          )
+            return element;
+        }),
+        self
+      );
+
+      // clear Attributes
+      this.updateAttributes();
+
+      return;
     }
 
-    // toggle classes
-    this.handleToggleClasses(target, self);
-    // toggle scroll
-    this.handleToggleScroll();
-
-    // toggle attribute
-    this.handleToggleAttribute(target);
-
-    // toggle resets
-    if (this.resetActions || this.resets) {
-      if (target.length !== undefined) {
-        target.forEach((node) => {
-          this.updateReset(node, self);
-        });
-      } else {
-        this.updateReset(target, self);
-      }
-    }
+    this.elementInteractionScenario(target);
 
     // clear Attributes
     this.updateAttributes();
@@ -256,6 +281,20 @@ class BasicInteractions {
 
   updateReset(target, self) {
     const nodeIndex = this.resets.findIndex((item) => item?.node === target);
+    // if(nodeIndex === -1 && this.resets.length > 0){
+    //   let childIndex = -1;
+    //   const parentReset = this.resets.find(reset => {
+    //     if(reset.node.length !== undefined){
+    //       childIndex = reset.node.findIndex(node => node === target);
+    //       return reset
+    //     }
+    //   })
+    //   console.log('parent', parentReset);
+    //   console.log('child', childIndex);
+    //   if(parentReset && childIndex !== -1){
+    //     parentReset.node.splice(childIndex, 1)
+    //   }
+    // }
 
     if (nodeIndex === -1 && this.resetActions) {
       this.resets.push({
@@ -277,8 +316,7 @@ class BasicInteractions {
         },
       });
     } else {
-      !this.isToggled(this.resets[nodeIndex].node) &&
-        this.resets.splice(nodeIndex, 1);
+      this.resets.splice(nodeIndex, 1);
     }
   }
 
@@ -321,11 +359,11 @@ class BasicInteractions {
   entryReset(entry) {
     if (!entry) return;
     // toggle all assigned classes to the target
-    this.toggleSingleNodeElement(entry.node, entry.classes);
+    this.togglePotentialArrayOfNodes(entry.node, entry.classes, false);
     // toggle all assigned class to self
-    this.toggleSingleNodeElement(entry.self, entry.selfClasses);
+    this.toggleSingleNodeElement(entry.self, entry.selfClasses, false);
     // reset scroll
-    if (entry.scroll) this.toggleScroll();
+    if (entry.scroll !== null) this.toggleScroll();
 
     // reset attachAttribute
     if (entry.toggleAttachAttribute.isAttached !== null) {
