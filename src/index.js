@@ -1,328 +1,310 @@
 class BasicInteractions {
-  constructor({
-    globalNameSpace = 'BasicInteractions',
-    toggleSelector = 'data-toggle',
-    toggleSelfSelector = 'data-toggle-self',
-    targetToggleSelector = 'data-toggle-target',
-    classToggleAction = 'data-toggle-action',
-    resetSelector = 'data-reset',
-    resetsGroupSelector = 'data-group-reset',
-    scrollToggleSelector = 'data-toggle-scroll',
-    scrollToggleClasses = 'toggle-scroll',
-    attachAttributeSelector = 'data-attach',
-    attachAttributeValueSelector = 'data-attach-value',
-    detachAttributeSelector = 'data-detach',
-    interactOnLoad = 'data-on-load',
-  } = {}) {
-    // debounce timeoutId
-    this.timeoutId = null;
+  // global #namespace for state sharing
+  #globalNameSpace = 'BasicInteractions';
+
+  // BodyScroll
+  #scrollToggleClasses = ['toggle-scroll'];
+  #scrollPosition = 0;
+  #isDisabledScroll = false;
+
+  // debounce #timeoutId
+  #timeoutId = null;
+
+  constructor({ scrollToggleClasses } = {}) {
     // local state of active targets that should be reset on specific event
-    window[globalNameSpace] = { resets: [] };
-    this.resets = window[globalNameSpace].resets;
-    // required main toggle selector
-    this.toggleSelector = toggleSelector;
-    // required optional self toggle selector
-    this.toggleSelfSelector = toggleSelfSelector;
-    // target selector where classes can be applied
-    this.targetToggleSelector = targetToggleSelector;
-    // attribute to indicate specific toggle action
-    this.classToggleAction = classToggleAction;
-    // attribute to add into resets
-    this.resetSelector = resetSelector;
-    // resets group selector
-    this.resetsGroupSelector = resetsGroupSelector;
-    // attributes to attach and detach attribute
-    this.attachAttributeSelector = attachAttributeSelector;
-    this.attachAttributeValueSelector = attachAttributeValueSelector;
-    this.detachAttributeSelector = detachAttributeSelector;
+    window[this.#globalNameSpace] = { resets: [] };
+    this.resets = window[this.#globalNameSpace].resets;
 
-    // on load interaction selector
-    this.interactOnLoad = interactOnLoad;
-
-    // BodyScroll
-    this.scrollToggleSelector = scrollToggleSelector;
-    this.scrollToggleClasses = scrollToggleClasses;
-    this.scrollPosition = 0;
-    this.isActiveScroll = false;
+    if (scrollToggleClasses) this.#scrollToggleClasses = scrollToggleClasses;
   }
 
+  /**
+   * private helper method that converts provided string of classes separated by space into array of strings
+   *
+   * can be used for assigned to data-toggle attribute value to convert it for further interactions
+   * @param {String} string
+   * @returns {[String]}
+   */
+  #classesStringToArray(string) {
+    return string
+      ?.toLowerCase()
+      .split(' ')
+      .filter((item) => item !== '');
+  }
+
+  /**
+   * Private method to create a new Object without specific keys
+   * @param {Object} obj - Object to grab specific keys from
+   * @param {[String]} keys - Array of key names that should be exclude from new object
+   * @returns - new Object without keys that was specified in keys argument
+   */
+  #filterObjEntries(obj, keys) {
+    return Object.fromEntries(
+      Object.entries(obj).filter(([key]) => !keys.includes(key))
+    );
+  }
+
+  /**
+   * public helper method to debounce functions/handlers
+   * @param {Function} callback
+   */
   debounce(callback) {
-    if (this.timeoutId) clearTimeout(this.timeoutId);
-    this.timeoutId = setTimeout(() => {
+    if (this.#timeoutId) clearTimeout(this.#timeoutId);
+    this.#timeoutId = setTimeout(() => {
       callback();
     }, 300);
   }
 
-  disableScroll() {
-    this.scrollPosition = window.scrollY;
-    document.body.style.top = `-${this.scrollPosition}px`;
-    document.body.classList.add(...this.scrollToggleClasses);
-    this.isActiveScroll = true;
+  /**
+   * private helper method to assign inline style for HTML Element
+   * @param {HTMLElement} target - element for styles apply
+   * @param {Object} styles - object of css styles ex.: {background: 'grey', border: '1px solid black'}
+   */
+  #setCSS(target, styles) {
+    if (!target || !styles) return;
+    for (const property in styles) target.style[property] = styles[property];
   }
 
-  enableScroll() {
-    document.body.classList.remove(...this.scrollToggleClasses);
+  /**
+   * private method to disable scroll on the page
+   */
+  #disableScroll() {
+    this.#scrollPosition = window.scrollY;
+    document.body.style.top = `-${this.#scrollPosition}px`;
+    document.body.classList.add(...this.#scrollToggleClasses);
+    this.#isDisabledScroll = true;
+  }
+
+  /**
+   * private method to disable scroll on the page
+   */
+  #enableScroll() {
+    document.body.classList.remove(...this.#scrollToggleClasses);
     document.body.style.removeProperty('top');
-    window.scrollTo(0, this.scrollPosition);
-    this.isActiveScroll = false;
+    window.scrollTo(0, this.#scrollPosition);
+    this.#isDisabledScroll = false;
   }
 
-  toggleScroll(switcher) {
-    if (typeof switcher === 'boolean') {
-      switcher
-        ? !this.isActiveScroll && this.disableScroll()
-        : this.isActiveScroll && this.enableScroll();
-    } else {
-      this.isActiveScroll ? this.enableScroll() : this.disableScroll();
+  /**
+   * public function for toggling scroll on the page
+   * @param {String | Boolean} action - determinate scroll toggle action enable/disable/toggle
+   */
+  handleToggleScroll(action) {
+    // toggle scroll
+    switch (action) {
+      case 'enable' || (typeof action === 'boolean' && true):
+        this.#isDisabledScroll && this.#enableScroll();
+        break;
+      case 'disable' || (typeof action === 'boolean' && false):
+        !this.#isDisabledScroll && this.#disableScroll();
+        break;
+      default:
+        this.#isDisabledScroll ? this.#enableScroll() : this.#disableScroll();
+        break;
     }
   }
 
-  updateAttributes(node) {
-    if (node) {
-      const toArray = (string) =>
-        string
-          ?.toLowerCase()
-          .split(' ')
-          .filter((item) => item !== '');
-
-      this.toggleTarget = node.getAttribute(this.targetToggleSelector);
-      this.classesToToggleValue = node.getAttribute(this.toggleSelector);
-      this.classesToToggle = toArray(this.classesToToggleValue);
-      this.classesToToggleSelf = this.toggleSelfSelector
-        ? toArray(node.getAttribute(this.toggleSelfSelector))
-        : null;
-      this.toggleAction = node.getAttribute(this.classToggleAction);
-      this.resetActions = toArray(node.getAttribute(this.resetSelector));
-      this.scrollAction = !node.hasAttribute(this.scrollToggleSelector)
-        ? null
-        : node.getAttribute(this.scrollToggleSelector);
-      this.attachAttribute = node.getAttribute(this.attachAttributeSelector);
-      this.attachAttributeValue = node.getAttribute(
-        this.attachAttributeValueSelector
-      );
-      this.detachAttribute = node.getAttribute(this.detachAttributeSelector);
-      this.resetsGroup = node.closest(`[${this.resetsGroupSelector}]`);
-    } else {
-      this.toggleTarget = null;
-      this.classesToToggle = null;
-      this.classesToToggleSelf = null;
-      this.toggleAction = null;
-      this.resetActions = null;
-      this.resetsGroup = null;
-      this.scrollAction = null;
-      this.attachAttribute = null;
-      this.attachAttributeValue = null;
-      this.detachAttribute = null;
-    }
-  }
-
-  handleToggleAttribute(target, { attribute, value, isAttached } = {}) {
-    if (
-      !(
-        (this.attachAttribute && this.attachAttributeValue) ||
-        this.detachAttribute ||
-        attribute
-      )
-    )
-      return;
-
-    const attributeToToggle =
-      this.attachAttribute || this.detachAttribute || attribute;
-
-    if (
-      target.hasAttribute(attributeToToggle) ||
-      (typeof isAttached === 'boolean' && isAttached)
-    ) {
-      // detach attribute
-      target.removeAttribute(attributeToToggle);
-    } else {
-      // attach attribute
-      target.setAttribute(
-        attributeToToggle,
-        this.attachAttributeValue || value
-      );
-    }
-  }
-
-  toggleSingleNodeElement(elem, classes, toggle) {
-    if (!elem || !classes) return;
-    classes.forEach((className) => {
-      elem.classList.toggle(className, toggle);
-    });
-  }
-
-  togglePotentialArrayOfNodes(target, classes, toggle) {
-    if (target.length !== undefined) {
-      target.forEach((node) => {
-        this.toggleSingleNodeElement(node, classes, toggle);
-      });
-    } else {
-      this.toggleSingleNodeElement(target, classes, toggle);
-    }
-  }
-
-  handleToggleClasses(target, self) {
-    let toggle;
-
+  /**
+   *
+   * @param {HTMLElement} target - element to toggle classes
+   * @param {[String]} classes - array of strings / classes
+   * @param {String | Boolean} action - action toggler to determinate appropriate handle (add/true; remove/false; undefined/toggle)
+   */
+  handleToggleClasses(target, classes, action) {
     // change toggle action
-    if (this.toggleAction) {
-      switch (this.toggleAction.toLowerCase()) {
-        case 'add':
-          toggle = true;
-          break;
-        case 'remove':
-          toggle = false;
-          break;
+    switch (action) {
+      case 'add' || (typeof action === 'boolean' && true):
+        if (target.classList.contains(classes[0])) break;
+        target.classList.add(...classes);
+        break;
+      case 'remove' || (typeof action === 'boolean' && false):
+        if (!target.classList.contains(classes[0])) break;
+        target.classList.remove(...classes);
+        break;
 
-        default:
-          break;
-      }
-    }
-
-    // toggle classes
-    this.togglePotentialArrayOfNodes(target, this.classesToToggle, toggle);
-
-    if (self) {
-      this.toggleSingleNodeElement(self, this.classesToToggleSelf, toggle);
+      default:
+        classes.forEach((className) => {
+          target.classList.toggle(className);
+        });
+        break;
     }
   }
 
-  handleToggleScroll() {
-    // toggle scroll
-    if (this.scrollAction !== null) {
-      switch (this.scrollAction) {
-        case 'enable':
-          this.enableScroll();
-          break;
-        case 'disable':
-          this.disableScroll();
-          break;
-        default:
-          this.toggleScroll();
-          break;
-      }
-    }
+  handleToggleAttributes(attachTarget, attachValue, attachAction) {
+    // console.log('toggle attributes');
+    // console.log(attachTarget, attachValue, attachAction);
   }
 
-  elementInteractionScenario(node, self) {
-    // update group reset entry
-    if (this.resetsGroup && this.resets?.length > 0) this.handleGroupReset();
-    // toggle classes
-    this.handleToggleClasses(node, self);
-    // toggle scroll
-    this.handleToggleScroll();
-
-    // toggle attribute
-    this.handleToggleAttribute(node);
-    // toggle resets
-    this.updateReset(node, self);
-  }
-
-  handleInteraction(node) {
-    if (!node) return;
-    let target = node.closest(`[${this.toggleSelector}]`);
-    if (!target) return;
-
-    // set Attributes
-    this.updateAttributes(target);
-
-    // save self node
-    const self = this.classesToToggleSelf ? target : null;
-
-    // change toggle target
-    if (this.toggleTarget) {
-      target = document.querySelectorAll(this.toggleTarget);
-
-      // main scenario for single node element
-      this.elementInteractionScenario(
-        [...target].filter((element) => {
-          if (!this.toggleAction && self) {
-            if (
-              self.classList.contains(this.classesToToggleSelf[0]) &&
-              element.classList.contains(this.classesToToggle[0])
-            ) {
-              return element;
-            }
-            if (
-              !self.classList.contains(this.classesToToggleSelf[0]) &&
-              !element.classList.contains(this.classesToToggle[0])
-            ) {
-              return element;
-            }
-          } else if (
-            !(
-              this.toggleAction === 'add' &&
-              element.classList.contains(this.classesToToggle[0])
-            )
-          )
-            return element;
-          else if (
-            !(
-              this.toggleAction === 'remove' &&
-              !element.classList.contains(this.classesToToggle[0])
-            )
-          )
-            return element;
-        }),
-        self
-      );
-
-      // clear Attributes
-      this.updateAttributes();
-
-      return;
-    }
-
-    this.elementInteractionScenario(target);
-
-    // clear Attributes
-    this.updateAttributes();
-  }
-
-  updateReset(target, self) {
-    const nodeIndex = this.resets.findIndex((item) => item?.node === target);
-    // if(nodeIndex === -1 && this.resets.length > 0){
-    //   let childIndex = -1;
-    //   const parentReset = this.resets.find(reset => {
-    //     if(reset.node.length !== undefined){
-    //       childIndex = reset.node.findIndex(node => node === target);
-    //       return reset
-    //     }
-    //   })
-    //   console.log('parent', parentReset);
-    //   console.log('child', childIndex);
-    //   if(parentReset && childIndex !== -1){
-    //     parentReset.node.splice(childIndex, 1)
-    //   }
-    // }
-
-    if (nodeIndex === -1 && this.resetActions) {
-      this.resets.push({
-        node: target,
-        self,
-        selfClasses: this.classesToToggleSelf,
-        resetActions: this.resetActions,
-        resetsGroup: this.resetsGroup,
-        classes: this.classesToToggle,
-        scroll: this.scrollAction,
-        toggleAttachAttribute: {
-          attribute: this.attachAttribute || this.detachAttribute,
-          value: this.attachAttributeValue,
-          isAttached: this.attachAttribute
-            ? true
-            : this.detachAttribute
-            ? false
-            : null,
-        },
-      });
+  /**
+   * private method to update resets array at the Interaction
+   * @param {Object} data - data to store in resets array,
+   *
+   * Object should contain HTMLElement, reset action, and data to reset.
+   */
+  #updateResets(data) {
+    const nodeIndex = this.resets.findIndex((item) => item?.node === data.node);
+    if (nodeIndex === -1) {
+      this.resets.push(data);
     } else {
       this.resets.splice(nodeIndex, 1);
+    }
+    console.log('-resets after update-');
+    console.table(this.resets);
+  }
+
+  #handleGroupReset(group) {
+    // private method to interact with node elements wrapped in groupReset (parent node)
+    console.log('group reset', group);
+  }
+
+  /**
+   * public method to use in Event Listener
+   *
+   * need to trigger this.resets array (on events like "resize", "escape")
+   * @param {String} action - ex: "resize" - by this param will be found corresponded elements in resets state.
+   */
+  handleResets(action) {
+    if (!action) return;
+    console.log('resets action: ', action);
+    const toReset = this.resets.filter((entry) =>
+      entry.reset.some((rAction) => rAction === action)
+    );
+    console.log('--toRest--');
+    console.table(toReset);
+
+    if (toReset.length === 0) return;
+    // reset each entry
+    for (let index = 0; index < toReset.length; index++) {
+      const { node, toggle, toggleAction } = toReset[index];
+
+      // toggle Classes
+      switch (toggleAction) {
+        case 'add' || (typeof toggleAction === 'boolean' && true):
+          if (!node.classList.contains(classes[0])) break;
+          node.classList.remove(...classes);
+          break;
+        case 'remove' || (typeof toggleAction === 'boolean' && false):
+          if (node.classList.contains(classes[0])) break;
+          node.classList.add(...classes);
+          break;
+
+        default:
+          this.handleToggleClasses(node, toggle);
+          break;
+      }
+      // TODO: other resets
+
+      // cleanup resets array
+      this.resets.splice(
+        this.resets.findIndex((entry) => entry.node === node),
+        1
+      );
+    }
+
+  }
+
+  /**
+   * private method to describe interactions scenario for a single DOM element
+   * @param {HTMLElement} node - target on which should be applied action handlers
+   * @param {Object} interactionData - data for determination which action should be applied
+   */
+  #interactionScenario(node, interactionData) {
+    const {
+      toggle,
+      toggleAction,
+      attr,
+      attrValue,
+      attrTarget,
+      attrAction,
+      toggleScroll,
+      reset,
+      groupReset,
+    } = interactionData;
+
+    if (toggle) {
+      // can be assign to any node element
+      this.handleToggleClasses(node, toggle, toggleAction);
+    }
+
+    if (toggleScroll !== undefined) {
+      // can be assign only to main interaction element
+      this.handleToggleScroll(toggleScroll);
+    }
+
+    if (attr && attrTarget && attrValue) {
+      // can be assign only to main interaction element
+      this.handleToggleAttributes(attr, attrValue, attrTarget, attrAction);
+    }
+
+    if (reset) {
+      // can be assign to any node element
+      this.#updateResets({
+        node,
+        ...interactionData,
+      });
+    }
+
+    if (groupReset) {
+      // reset elements that wrapped in the parent group element
+      this.#handleGroupReset(groupReset);
+    }
+  }
+
+  /**
+   *
+   * @param {HTMLElement} node - main interaction target;
+   *
+   *  Public method to run interaction scenario for specific target.
+   *
+   *  by default it's target from click event
+   */
+  handleInteraction(node) {
+    if (!node) return;
+    const target = node.closest(`[data-toggle]`);
+    if (!target) return;
+
+    const {
+      toggle: rawToggle,
+      toggleTarget,
+      toggleTargetClass: rawToggleTargetClass,
+      toggleTargetAction,
+      reset: rawReset,
+    } = target.dataset;
+    const toggle = this.#classesStringToArray(rawToggle);
+    const toggleTargetClass = this.#classesStringToArray(rawToggleTargetClass);
+    const reset = this.#classesStringToArray(rawReset);
+
+    this.#interactionScenario(target, {
+      ...this.#filterObjEntries(target.dataset, [
+        'toggle',
+        'toggleTarget',
+        'toggleTargetClass',
+        'toggleTargetAction',
+      ]),
+      toggle,
+      reset,
+    });
+
+    if (toggleTarget) {
+      const otherTargets = document.querySelectorAll(`${toggleTarget}`);
+
+      if (otherTargets?.length === 0) return;
+
+      for (let index = 0; index < otherTargets.length; index++) {
+        const otherTarget = otherTargets[index];
+
+        this.#interactionScenario(otherTarget, {
+          toggle: toggleTargetClass,
+          toggleAction: toggleTargetAction,
+          reset,
+        });
+      }
     }
   }
 
   handleAutoInteraction() {
     // get all items that have on-load attribute
-    const activeItems = document.querySelectorAll(`[${this.interactOnLoad}]`);
+    const activeItems = document.querySelectorAll(`[data-on-load]`);
     // go through all fined items
     activeItems.forEach((node) => {
       // check if delay exists
@@ -335,45 +317,6 @@ class BasicInteractions {
         this.handleInteraction(node);
       }
     });
-  }
-
-  handleResets(resetAction) {
-    if (!resetAction) return;
-    // items to reset
-    const nodesToReset = this.resets.filter((node) =>
-      node.resetActions.some((action) => action === resetAction)
-    );
-
-    nodesToReset.forEach((entry) => {
-      this.entryReset(entry);
-    });
-  }
-
-  handleGroupReset() {
-    const entry = this.resets.find(
-      (node) => node.resetsGroup === this.resetsGroup
-    );
-    if (entry) this.entryReset(entry);
-  }
-
-  entryReset(entry) {
-    if (!entry) return;
-    // toggle all assigned classes to the target
-    this.togglePotentialArrayOfNodes(entry.node, entry.classes, false);
-    // toggle all assigned class to self
-    this.toggleSingleNodeElement(entry.self, entry.selfClasses, false);
-    // reset scroll
-    if (entry.scroll !== null) this.toggleScroll();
-
-    // reset attachAttribute
-    if (entry.toggleAttachAttribute.isAttached !== null) {
-      this.handleToggleAttribute(entry.node, entry.toggleAttachAttribute);
-    }
-    // update resets
-    this.resets.splice(
-      this.resets.findIndex((item) => item === entry),
-      1
-    );
   }
 
   init() {
