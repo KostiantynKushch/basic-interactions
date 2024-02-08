@@ -3,25 +3,23 @@ class BasicInteractions {
   #globalNameSpace = 'BasicInteractions';
 
   // BodyScroll
-  #scrollToggleClasses = ['toggle-scroll'];
   #scrollPosition = 0;
   #isDisabledScroll = false;
 
   // debounce #timeoutId
   #timeoutId = null;
 
-  constructor({ scrollToggleClasses } = {}) {
+  constructor() {
     // local state of active targets that should be reset on specific event
     window[this.#globalNameSpace] = { resets: [] };
     this.resets = window[this.#globalNameSpace].resets;
-
-    if (scrollToggleClasses) this.#scrollToggleClasses = scrollToggleClasses;
   }
 
   /**
-   * private helper method that converts provided string of classes separated by space into array of strings
    *
-   * can be used for assigned to data-toggle attribute value to convert it for further interactions
+   * private helper method that converts provided string (of classes
+   * separated by space) into array of strings
+   *
    * @param {String} string
    * @returns {[String]}
    */
@@ -33,6 +31,7 @@ class BasicInteractions {
   }
 
   /**
+   *
    * Private method to create a new Object without specific keys
    * @param {Object} obj - Object to grab specific keys from
    * @param {[String]} keys - Array of key names that should be exclude from new object
@@ -45,6 +44,7 @@ class BasicInteractions {
   }
 
   /**
+   *
    * public helper method to debounce functions/handlers
    * @param {Function} callback
    */
@@ -66,12 +66,29 @@ class BasicInteractions {
   }
 
   /**
+   * private helper method to remove inline style for HTML Element
+   * @param {HTMLElement} target - element to remove styles
+   * @param {[String]} properties - array of css properties to remove
+   */
+  #removeCSS(target, properties) {
+    if (!target || !properties) return;
+    for (const property of properties) {
+      target.style.removeProperty(property);
+    }
+  }
+
+  /**
    * private method to disable scroll on the page
    */
   #disableScroll() {
     this.#scrollPosition = window.scrollY;
-    document.body.style.top = `-${this.#scrollPosition}px`;
-    document.body.classList.add(...this.#scrollToggleClasses);
+    this.#setCSS(document.body, {
+      position: 'fixed',
+      overflow: 'hidden',
+      top: `-${this.#scrollPosition}px`,
+      left: 0,
+      right: 0,
+    });
     this.#isDisabledScroll = true;
   }
 
@@ -79,14 +96,20 @@ class BasicInteractions {
    * private method to disable scroll on the page
    */
   #enableScroll() {
-    document.body.classList.remove(...this.#scrollToggleClasses);
-    document.body.style.removeProperty('top');
+    this.#removeCSS(document.body, [
+      'overflow',
+      'position',
+      'top',
+      'left',
+      'right',
+    ]);
     window.scrollTo(0, this.#scrollPosition);
     this.#isDisabledScroll = false;
   }
 
   /**
-   * public function for toggling scroll on the page
+   *
+   *  public function for toggling scroll on the page
    * @param {String | Boolean} action - determinate scroll toggle action enable/disable/toggle
    */
   handleToggleScroll(action) {
@@ -130,16 +153,39 @@ class BasicInteractions {
     }
   }
 
-  handleToggleAttributes(attachTarget, attachValue, attachAction) {
-    // console.log('toggle attributes');
-    // console.log(attachTarget, attachValue, attachAction);
+  /**
+   *
+   * @param {{attr : String, attrValue : String, attrTarget : HTMLElement, attraction : String | Boolean}} Object of options needed to toggle attribute.
+   */
+  handleToggleAttributes({ attr, attrValue, attrTarget, attrAction }) {
+    if (!attr || !attrTarget) return;
+
+    switch (attrAction) {
+      case 'add' || (typeof action === 'boolean' && true):
+        // attach
+        if (attrTarget.hasAttribute(attr)) break;
+        attrTarget.setAttribute(attr, attrValue);
+        break;
+      case 'remove' || (typeof action === 'boolean' && false):
+        // detach
+        if (!attrTarget.hasAttribute(attr)) break;
+        attrTarget.removeAttribute(attr);
+        break;
+      default:
+        // toggle
+        attrTarget.hasAttribute(attr)
+          ? attrTarget.removeAttribute(attr)
+          : attrTarget.setAttribute(attr, attrValue);
+        break;
+    }
   }
 
   /**
-   * private method to update resets array at the Interaction
-   * @param {Object} data - data to store in resets array,
    *
-   * Object should contain HTMLElement, reset action, and data to reset.
+   * private method to update resets array at the Interaction
+   * @param {{node: HTMLElement}} data - data to store in resets array,
+   *
+   * Object should contain HTMLElement and data to reset.
    */
   #updateResets(data) {
     const nodeIndex = this.resets.findIndex((item) => item?.node === data.node);
@@ -148,65 +194,91 @@ class BasicInteractions {
     } else {
       this.resets.splice(nodeIndex, 1);
     }
-    console.log('-resets after update-');
-    console.table(this.resets);
-  }
-
-  #handleGroupReset(group) {
-    // private method to interact with node elements wrapped in groupReset (parent node)
-    console.log('group reset', group);
   }
 
   /**
+   *
+   * private method to interact with node elements wrapped in groupReset (parent node)
+   * @param {HTMLElement} group
+   */
+  #handleGroupReset(group) {
+    const entry = this.resets.find((node) => node.groupReset === group);
+    if (entry) this.#entryReset(entry);
+  }
+
+  /**
+   *
+   * @param {{
+   * node: HTMLElement,
+   * toggle: [String],
+   * toggleScroll: String | Boolean,
+   * initialClasses: String,
+   * attr: String,
+   * attrTarget: HTMLElement,
+   * attrValue: String,
+   * attrAction: String | Boolean,
+   * }} entry - data of entry to reset to initial state
+   */
+  #entryReset({
+    node,
+    toggle,
+    toggleScroll,
+    initialClasses,
+    attr,
+    attrTarget,
+    attrValue,
+    attrAction,
+  }) {
+    // toggle Classes
+    toggle && (node.className = initialClasses);
+
+    // toggle scroll
+    if (toggleScroll !== undefined) this.handleToggleScroll(toggleScroll);
+
+    // toggle attribute
+    if (attr && attrTarget)
+      this.handleToggleAttributes({ attr, attrValue, attrTarget, attrAction });
+
+    // cleanup resets array
+    this.resets.splice(
+      this.resets.findIndex((entry) => entry.node === node),
+      1
+    );
+  }
+
+  /**
+   *
    * public method to use in Event Listener
    *
-   * need to trigger this.resets array (on events like "resize", "escape")
-   * @param {String} action - ex: "resize" - by this param will be found corresponded elements in resets state.
+   * @param {String} action - type of the reset action.
    */
   handleResets(action) {
     if (!action) return;
-    console.log('resets action: ', action);
     const toReset = this.resets.filter((entry) =>
-      entry.reset.some((rAction) => rAction === action)
+      entry.reset?.some((rAction) => rAction === action)
     );
-    console.log('--toRest--');
-    console.table(toReset);
 
     if (toReset.length === 0) return;
     // reset each entry
     for (let index = 0; index < toReset.length; index++) {
-      const { node, toggle, toggleAction } = toReset[index];
-
-      // toggle Classes
-      switch (toggleAction) {
-        case 'add' || (typeof toggleAction === 'boolean' && true):
-          if (!node.classList.contains(classes[0])) break;
-          node.classList.remove(...classes);
-          break;
-        case 'remove' || (typeof toggleAction === 'boolean' && false):
-          if (node.classList.contains(classes[0])) break;
-          node.classList.add(...classes);
-          break;
-
-        default:
-          this.handleToggleClasses(node, toggle);
-          break;
-      }
-      // TODO: other resets
-
-      // cleanup resets array
-      this.resets.splice(
-        this.resets.findIndex((entry) => entry.node === node),
-        1
-      );
+      this.#entryReset(toReset[index]);
     }
-
   }
 
   /**
+   *
    * private method to describe interactions scenario for a single DOM element
    * @param {HTMLElement} node - target on which should be applied action handlers
-   * @param {Object} interactionData - data for determination which action should be applied
+   * @param {{
+   *  toggle: String,
+   *  toggleAction: String| Boolean,
+   *  attr: String,
+   *  attrValue: String,
+   *  attrTarget: String,
+   *  attrAction: String | Boolean,
+   *  toggleScroll: String | Boolean,
+   *  reset: String,
+   *  }} interactionData - data for determination which action should be applied
    */
   #interactionScenario(node, interactionData) {
     const {
@@ -214,12 +286,13 @@ class BasicInteractions {
       toggleAction,
       attr,
       attrValue,
-      attrTarget,
+      attrTarget: attrTargetSelector,
       attrAction,
       toggleScroll,
       reset,
-      groupReset,
     } = interactionData;
+    const initialClasses = this.#classesStringToArray(node.classList.value);
+    const attrTarget = attrTargetSelector ? document.querySelector(attrTargetSelector) : node;
 
     if (toggle) {
       // can be assign to any node element
@@ -231,22 +304,26 @@ class BasicInteractions {
       this.handleToggleScroll(toggleScroll);
     }
 
-    if (attr && attrTarget && attrValue) {
+    if (attr && attrTarget) {
       // can be assign only to main interaction element
-      this.handleToggleAttributes(attr, attrValue, attrTarget, attrAction);
+      this.handleToggleAttributes({ attr, attrValue, attrTarget, attrAction });
     }
 
-    if (reset) {
+    const groupReset = node.closest('[data-group-reset]');
+    if (groupReset) {
+      // reset elements that wrapped in the parent group element
+      this.#handleGroupReset(groupReset);
+    }
+
+    if (reset || groupReset) {
       // can be assign to any node element
       this.#updateResets({
         node,
         ...interactionData,
+        attrTarget,
+        groupReset,
+        initialClasses,
       });
-    }
-
-    if (groupReset) {
-      // reset elements that wrapped in the parent group element
-      this.#handleGroupReset(groupReset);
     }
   }
 
@@ -302,6 +379,9 @@ class BasicInteractions {
     }
   }
 
+  /**
+   * public method to run AutoInteraction on load event
+   */
   handleAutoInteraction() {
     // get all items that have on-load attribute
     const activeItems = document.querySelectorAll(`[data-on-load]`);
@@ -319,6 +399,9 @@ class BasicInteractions {
     });
   }
 
+  /**
+   * public method to attach default event listeners
+   */
   init() {
     //interact on load
     this.handleAutoInteraction();

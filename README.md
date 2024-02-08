@@ -55,51 +55,26 @@ window.addEventListener('keydown', (e) => {
 
 ## How to use it?
 
-### Initialize BI (BasicInteractions)
+After the installation process and setup of needed EventListeners,
+all you need is just use prepared data attributes to add interactivity into your project
 
-To initialize BI first of all you need to create a new Class instance.
+#### Data Attributes
 
-```js
-const bi = new BasicInteractions();
-```
-
-At this point you can customize default data selectors by passing options object into class constructor.
-
-```js
-const bi = new BasicInteractions({
-  toggleSelector: 'data-toggle',
-  targetToggleSelector: 'data-toggle-target',
-  toggleSelfSelector: 'data-toggle-self',
-  classToggleAction: 'data-toggle-action',
-  resetSelector: 'data-reset',
-  resetsGroupSelector: 'data-group-reset',
-  globalNameSpace: 'BasicInteractions',
-  scrollToggleSelector: 'data-toggle-scroll',
-  scrollToggleClasses: ['overflow-hidden', 'fixed', 'left-0', 'right-0'],
-  attachAttributeSelector: 'data-attach',
-  attachAttributeValueSelector: 'data-attach-value',
-  detachAttributeSelector: 'data-detach',
-  interactOnLoad: 'data-on-load',
-});
-```
-
-#### Options
-
-| Option Name                  | Value / Attribute Name  |                                                                                                                                Description |
-| ---------------------------- | :---------------------: | -----------------------------------------------------------------------------------------------------------------------------------------: |
-| toggleSelector               |       data-toggle       |                                                                                      main attribute / contains string of classes to toggle |
-| targetToggleSelector         |   data-toggle-target    |                                                                                       contains target selector - works as querySelectorAll |
-| toggleSelfSelector           |    data-toggle-self     |           contains string of classes / useful in case that you need toggle classes in both places at once (event target and toggle target) |
-| classToggleAction            |   data-toggle-action    |                                                    contains string of toggle action ('add' / 'remove'). By default works as regular toggle |
-| resetSelector                |       data-reset        |                                                                                           contains string of reset actions (resize escape) |
-| resetsGroupSelector          |    data-group-reset     |                                                               contains null; used to mark group of items where only one item can be active |
-| globalNameSpace              |    BasicInteractions    |                                                         optional parameter / to create global scope in window object to share resets array |
-| scrollToggleSelector         |   data-toggle-scroll    |                                                                           to mark ('toggle', 'disable', or 'enable') body scroll behavior. |
-| scrollToggleClasses          | 'string of css classes' | optional parameter / list of classes that should be applied to html body to disable body scroll. By default used list of Tailwind classes. |
-| attachAttributeSelector      |       data-attach       |                                                                                   to attach additional custom data attribute to the target |
-| attachAttributeValueSelector |    data-attach-value    |                                                      to specify the value for the additional custom data attribute to attach to the target |
-| detachAttributeSelector      |       data-detach       |                                                                             to specify an attribute that should be removed from the target |
-| interactOnLoad               |      data-on-load       |                                                                                 to indicate targets that should be interacted on page load |
+| Value / Attribute Name    |                                                                                                                       Description |
+| :------------------------ | --------------------------------------------------------------------------------------------------------------------------------: |
+| data-toggle               |                                                           main attribute / contains string of classes to toggle on current target |
+| data-toggle-action        | contains string of toggle action ('add' / 'remove'). By default can be not included or included without value to work as a toggle |
+| data-toggle-target        |                                                                                  contains target selector - used querySelectorAll |
+| data-toggle-target-class  |                                                                                   contains string of classes to toggle on targets |
+| data-toggle-target-action |                                                                             same as data-toggle-action but used for found targets |
+| data-reset                |                                                                                  contains string of reset actions (resize escape) |
+| data-group-reset          |               used as plain attribute (w/o value) for parent HTMLElement to mark group of items where only one item can be active |
+| data-toggle-scroll        |                                                                  to mark ('disable', 'enable' or undefined) body scroll behavior. |
+| data-attr                 |                                                                                                          attribute name to attach |
+| data-attr-value           |                                                                                                         attribute value to attach |
+| data-attr-target          |                                                                             attribute target (single target - used querySelector) |
+| data-attr-action          |                                                            attribute actions (same behavior as classes toggle - 'add' / 'remove') |
+| data-on-load              |                                                                        to indicate targets that should be interacted on page load |
 
 ### Common usage
 
@@ -124,21 +99,24 @@ Toggle classes with reset options (escape and resize):
 Toggle classes for all specific targets:
 
 ```html
-<button data-toggle="some classes goes here" data-target=".target"></button>
+<button
+  data-toggle-target-class="some classes goes here"
+  data-toggle-target=".target"
+></button>
 ```
 
 Add or Remove classes for specific target or targets:
 
 ```html
 <button
-  data-toggle="some classes goes here"
-  data-toggle-action="add"
-  data-target="#target-id"
+  data-toggle-target-class="some classes goes here"
+  data-toggle-target-action="add"
+  data-toggle-target="#target-id"
 ></button>
 <button
-  data-toggle="some classes goes here"
-  data-toggle-action="remove"
-  data-target=".another-targets"
+  data-toggle-target-class="some classes goes here"
+  data-toggle-target-action="remove"
+  data-toggle-target=".another-targets"
 ></button>
 ```
 
@@ -147,8 +125,8 @@ Toggle classes for specific target and event target:
 ```html
 <button
   data-toggle="some classes goes here"
-  data-toggle-self="other classes"
-  data-target="#target-id"
+  data-toggle-target-class="other classes"
+  data-toggle-target="#target-id"
 ></button>
 ```
 
@@ -157,7 +135,7 @@ Toggle classes and body scroll:
 ```html
 <button
   data-toggle="some classes goes here"
-  data-toggle-scroll="toggle"
+  data-toggle-scroll
   data-rest="escape resize"
 ></button>
 ```
@@ -172,11 +150,25 @@ Toggle classes for group of element where only one element should be active (wit
 </div>
 ```
 
-### Add/Remove data attributes to HTML markup
+### Toggle/Add/Remove data attributes to HTML markup
 
 ```html
-<button data-attach="data-attribute" data-attach-value="value"></button>
-<button data-detach="data-attribute"></button>
+<button
+  data-toggle="className"
+  data-attr="data-test"
+  data-attr-value="test value"
+></button>
+<button
+  data-toggle="className"
+  data-attr="data-test"
+  data-attr-value="test value"
+  data-attr-action="add"
+></button>
+<button
+  data-toggle="className"
+  data-attr="data-test"
+  data-attr-action="remove"
+></button>
 ```
 
 ### Advanced Usage / adding extra functionality
