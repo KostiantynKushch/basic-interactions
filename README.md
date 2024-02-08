@@ -60,7 +60,7 @@ all you need is just use prepared data attributes to add interactivity into your
 
 #### Data Attributes
 
-| Value / Attribute Name    |                                                                                                                       Description |
+| Attribute Name    |                                                                                                                       Description |
 | :------------------------ | --------------------------------------------------------------------------------------------------------------------------------: |
 | data-toggle               |                                                           main attribute / contains string of classes to toggle on current target |
 | data-toggle-action        | contains string of toggle action ('add' / 'remove'). By default can be not included or included without value to work as a toggle |
